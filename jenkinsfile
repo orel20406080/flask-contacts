@@ -1,0 +1,101 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials-id')
+        DOCKERHUB_REPO = 'orel20406080'
+    }
+
+    stages {
+        stage('Clone Repository') {
+            steps {
+                git 'https://github.com/orel20406080/flask-contacts.git'
+            }
+        }
+
+        stage('Show Directory Structure') {
+            steps {
+                sh 'ls -R'
+            }
+        }
+
+        stage('Check File Permissions') {
+            steps {
+                sh 'ls -l Dockerfile'
+            }
+        }
+
+        stage('Check Dockerfile Name') {
+            steps {
+                sh 'ls -al | grep Dockerfile'
+            }
+        }
+
+        stage('Check Dockerfile Paths') {
+            steps {
+                script {
+                    def dockerfilePath = 'Dockerfile'
+                    if (!fileExists(dockerfilePath)) {
+                        error "Dockerfile not found in root directory"
+                    } else {
+                        echo "Dockerfile found"
+                    }
+                }
+            }
+        }
+
+        stage('Test Docker Login') {
+            steps {
+                script {
+                    sh '''
+                    echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
+                    '''
+                }
+            }
+        }
+
+        stage('Build DB Docker Image') {
+            steps {
+                script {
+                    sh '''
+                    docker build -t ${DOCKERHUB_REPO}/contacts-db -f Dockerfile.2 .
+                    '''
+                }
+            }
+        }
+
+        stage('Build Web Docker Image') {
+            steps {
+                script {
+                    sh '''
+                    docker build -t ${DOCKERHUB_REPO}/contacts-web -f Dockerfile .
+                    '''
+                }
+            }
+        }
+
+        stage('Push Docker Images') {
+            steps {
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-credentials-id') {
+                        sh '''
+                        docker push ${DOCKERHUB_REPO}/contacts-db:latest
+                        docker push ${DOCKERHUB_REPO}/contacts-web:latest
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Run Docker Containers') {
+            steps {
+                script {
+                    sh '''
+                    docker rm -f contacts-web || true
+                    docker run -d --name contacts-web -p 5000:5000 ${DOCKERHUB_REPO}/contacts-web
+                    '''
+                }
+            }
+        }
+    }
+}
