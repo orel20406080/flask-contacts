@@ -1,0 +1,12 @@
+FROM postgres:16.3
+
+ENV POSTGRES_DB=contacts_db
+ENV POSTGRES_USER=username
+ENV POSTGRES_PASSWORD=password
+
+#COPY docker-entrypoint-initdb.d /docker-entrypoint-initdb.d
+
+#COPY init.sql /
+#docker-entrypoint-initdb.d/
+
+EXPOSE 5432
