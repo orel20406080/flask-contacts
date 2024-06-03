@@ -70,7 +70,7 @@ pipeline {
                     sh '''
                     docker build -t ${DOCKERHUB_REPO}/contacts-web -f Dockerfile .
                     '''
-                }
+                } 
             }
         }
 
@@ -91,7 +91,9 @@ pipeline {
             steps {
                 script {
                     sh '''
-                    docker rm -f contacts-web || true
+                    docker rm -f contacts-db || true
+                    docker run -d --name contacts-db -p 5432:5432 ${DOCKERHUB_REPO}/contacts-db
+                      docker rm -f contacts-web || true
                     docker run -d --name contacts-web -p 5000:5000 ${DOCKERHUB_REPO}/contacts-web
                     '''
                 }
