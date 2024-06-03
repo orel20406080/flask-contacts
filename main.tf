@@ -1,3 +1,4 @@
+
 # variables
 variable "VULTR_API_KEY" {}
 variable "VULTR_PUBLIC_SSH_KEY" {}
